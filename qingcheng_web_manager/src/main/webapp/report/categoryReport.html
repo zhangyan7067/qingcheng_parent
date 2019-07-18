@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!‐‐ 引入样式 ‐‐>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="/js/util.js"></script>
+    <script src="/js/vue.js"></script>
+    <script src="/js/axios.js"></script>
+    <script src="/js/elementui.js"></script>
+    <script src="/js/echarts.js"></script>
+</head>
+<body>
+<div id="main" style="width:800px;height:800px;"></div>
+<div id="app">
+    <div class="block">
+        <span class="demonstration">默认</span>
+        <el-date-picker
+                v-model="dateRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                @change="fetchData()">
+        </el-date-picker>
+    </div>
+    <div class="block">
+    <el-table
+            :data="tableData"
+            borderr
+            style="width: 100%">
+        <el-table-column
+                prop="categoryId1"
+                label="一级分类"
+                width="240">
+        </el-table-column>
+        <el-table-column
+                prop="num"
+                label="数量"
+                width="240">
+        </el-table-column>
+        <el-table-column
+                prop="money"
+                label="销售额"
+                width="240">
+        </el-table-column>
+    </el-table>
+</div>
+</div>
+</body>
+<script>
+    new Vue({
+        el: '#app',
+        data(){
+            return {
+                tableData: [],
+                dateRange:[],
+
+            }
+        },
+        methods:{
+            fetchData (){
+                let date2=this.dateRange[1].Format("yyyy-MM-dd");
+                let date1=this.dateRange[0].Format("yyyy-MM-dd");
+
+                 axios.get(`/categoryReport/categoryReports.do?date1=${date1}&date2=${date2}`).then(response => {
+                 this.tableData = response.data;
+                     var chart = echarts.init(document.getElementById('main'), 'dark');
+                     let legendData=[];//图例
+                     let numData=[];//销售量数据
+                     let moneyData=[];//销售额数据
+                     for(let i=0;i<this.tableData.length;i++){
+                         legendData.push( this.tableData[i].categoryName );
+                         numData.push( { name:this.tableData[i].categoryName
+                             ,value:this.tableData[i].num } );
+                         moneyData.push( { name:this.tableData[i].categoryName
+                             ,value:this.tableData[i].money } );
+                     }
+
+
+
+                     chart.setOption( option = {
+                         title : {
+                             text: '商品类目销售分析',
+                             subtext: '纯属虚构',
+                             x:'center'
+                         },
+                         tooltip : {
+                             trigger: 'item',
+                             formatter: "{a} <br/>{b} : {c} ({d}%)"
+                         },
+                         legend: {
+                             orient: 'vertical',
+                             left: 'left',
+                             data: legendData
+                         },
+                         series : [
+                             {
+                                 name: '销售量',
+                                 type: 'pie',
+                                 radius : '35%',
+                                 center: ['30%', '70%'],
+                                 data:numData,
+                                 itemStyle: {
+                                     emphasis: {
+                                         shadowBlur: 10,
+                                         shadowOffsetX: 0,
+                                         shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                     }
+                                 }
+                             },
+                             {
+                                 name: '销售金额',
+                                 type: 'pie',
+                                 radius : '35%',
+                                 center: ['70%', '70%'],
+                                 data:moneyData,
+                                 itemStyle: {
+                                     emphasis: {
+                                         shadowBlur: 10,
+                                         shadowOffsetX: 0,
+                                         shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                     }
+                                 }
+                             }
+                         ]
+                     }
+                 )
+                 });
+            }
+        }
+    })
+</script>
+</html>
